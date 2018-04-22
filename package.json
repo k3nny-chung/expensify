@@ -2,7 +2,10 @@
   "name": "indecision-app",
   "version": "1.0.0",
   "main": "index.js",
-  "author": "Andrew Mead",
+  "author": "Kenneth Chung",
+  "engines": {
+    "node": "8.9.0"
+  },
   "license": "MIT",
   "scripts": {
     "build:dev": "webpack",
