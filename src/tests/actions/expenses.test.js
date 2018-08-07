@@ -1,9 +1,10 @@
-import {addExpense, startAddExpense, setExpenses, startSetExpenses, startRemoveExpense} from '../../actions/expenses';
+import {addExpense, startAddExpense, setExpenses, startSetExpenses, startRemoveExpense, startEditExpense} from '../../actions/expenses';
 import configureMockStore from 'redux-mock-store';
 import thunk from 'redux-thunk';
 import testExpenses from '../fixtures/expenses';
 import { start } from 'repl';
 import database from '../../firebase/firebase';
+import moment from 'moment';
 
 const createMockStore = configureMockStore([thunk]);
 
@@ -131,4 +132,23 @@ test('should remove expense from firebase', (done) => {
         done();
     });
 
+});
+
+test('should update expense in firebase', (done) => {
+    const store = createMockStore({});
+    const updatedID = testExpenses[0].id;
+    const updates = {
+        description: 'Office equipment',
+        note: 'testing update',
+        amount: 50000
+    }
+
+    store.dispatch(startEditExpense(updatedID, updates)).then(() => {
+        return database.ref(`expenses/${updatedID}`).once('value');
+    })
+    .then(snapshot => {
+        expect(snapshot.val().amount).toBe(updates.amount);
+        expect(snapshot.val().note).toBe(updates.note);
+        done();
+    });
 });
