@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import {Provider} from 'react-redux';
 import AppRouter from './routers/AppRouter';
 import configureStore from './store/configureStore';
-import {addExpense, removeExpense, editExpense} from './actions/expenses';
+import {addExpense, removeExpense, editExpense, startSetExpenses} from './actions/expenses';
 import {setTextFilter} from './actions/filters';
 import getFilteredExpenses from './selectors/expenses';
 import './firebase/firebase';
@@ -31,14 +31,8 @@ const store = configureStore();
 // }));
 
 
-const state = store.getState();
-const expenses = getFilteredExpenses(state.expenses, state.filters);
-console.log(expenses);
-
-store.subscribe( () => {
-    console.log(state);
-})
-
+//const state = store.getState();
+//const expenses = getFilteredExpenses(state.expenses, state.filters);
 
 const jsx = (
     <Provider store={store}>
@@ -46,4 +40,10 @@ const jsx = (
     </Provider>
 );
 
-ReactDOM.render(jsx, document.getElementById('app'));
+ReactDOM.render(<p>Loading...</p>, document.getElementById('app'));
+store.dispatch(startSetExpenses()).then(() => {
+    ReactDOM.render(jsx, document.getElementById('app'));    
+});
+
+
+
