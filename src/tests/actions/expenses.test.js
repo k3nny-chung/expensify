@@ -37,21 +37,6 @@ test('should setup add expense object with provided values', () => {
 
 });
 
-// test('shouold setup add expense object with default values', () => {
-//     const action = addExpense();
-//     expect(action).toEqual({
-//         type: 'ADD_EXPENSE',
-//         expense: {
-//             id: expect.any(String),
-//             description: '',
-//             amount: 0,
-//             createdAt: 0,
-//             note: ''
-//         }
-//     });
-// });
-
-
 test ('should add expense to database and store with provided values', (done) => {
     const store = createMockStore({});
     const expense = {
@@ -77,7 +62,7 @@ test ('should add expense to database and store with provided values', (done) =>
 
 });
 
-test ('should add expense to database and store with default values', () => {
+test ('should add expense to database and store with default values', (done) => {
     const store = createMockStore({});
     const expenseDefault = {
         description: '',
