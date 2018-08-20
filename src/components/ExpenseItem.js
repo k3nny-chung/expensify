@@ -3,14 +3,14 @@ import {Link} from 'react-router-dom';
 import moment from 'moment';
 import numeral from 'numeraljs';
 
-const ExpenseItem = (props) => (
-    <div>
-        <p>
-           Expense: <Link to={`/edit/${props.id}`}>{props.description}</Link><br/>
-           Amount: {numeral(props.amount/100).format('$0,0.00')}<br/>
-           Date: {moment(props.createdAt).format('MMMM Do, YYYY')}<br/>         
-        </p>
-    </div>
+const ExpenseItem = (props) => (        
+    <Link className="list-item" to={`/edit/${props.id}`}>
+        <div>
+            <h3 className="list-item__title">{props.description}</h3>
+            <span className="list_item__subtitle">{moment(props.createdAt).format('MMMM Do, YYYY')}</span>
+        </div>
+        <h3 className="list-item__data">{numeral(props.amount/100).format('$0,0.00')}</h3>
+    </Link>  
 )
 
 
