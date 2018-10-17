@@ -1,0 +1,19 @@
+.pagination {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: $m-size;
+    color: #007bff;
+}
+
+.pagination__item {
+    border: 1px solid #dee2e6;
+    padding: $s-size;
+}
+
+a.pagination__item {
+    text-decoration: none;
+    color:#007bff;
+    &:hover {
+        background: $off-white;
+    }
+}

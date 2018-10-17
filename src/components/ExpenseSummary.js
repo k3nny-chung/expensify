@@ -24,7 +24,7 @@ const ExpenseSummary = ({expenses}) => {
 }
 
 const mapStateToProps = (state) => ({
-    expenses: getFilteredExpenses(state.expenses, state.filters)
+    expenses: state.expenses.items //getFilteredExpenses(state.expenses, state.filters)
 });
 
 export default connect(mapStateToProps)(ExpenseSummary);

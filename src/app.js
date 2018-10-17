@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import {Provider} from 'react-redux';
 import AppRouter, {history} from './routers/AppRouter';
 import configureStore from './store/configureStore';
-import {addExpense, removeExpense, editExpense, startSetExpenses} from './actions/expenses';
+import {addExpense, removeExpense, editExpense, startSetExpenses, fetchExpenses} from './actions/expenses';
 import {login, logout}  from './actions/auth';
 import getFilteredExpenses from './selectors/expenses';
 import {firebase} from './firebase/firebase';
@@ -55,12 +55,16 @@ firebase.auth().onAuthStateChanged((user) => {
     if (user) {
         //logged in
         store.dispatch(login(user.uid));
-        store.dispatch(startSetExpenses()).then(() => {
-            renderApp();    
-            if (history.location.pathname === '/') {
-                history.push('/dashboard');
-            }
-        });
+        renderApp();    
+        if (history.location.pathname === '/') {
+            history.push('/dashboard');
+        }
+        // store.dispatch(fetchExpenses(3)).then(() => {
+        //     renderApp();    
+        //     if (history.location.pathname === '/') {
+        //         history.push('/dashboard');
+        //     }
+        // });
 
         console.log('logged in');
         

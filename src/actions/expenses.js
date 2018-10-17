@@ -77,4 +77,107 @@ export const startSetExpenses = () => {
             dispatch(setExpenses(expenses));
         });
     }   
-} 
+};
+
+export const fetchExpensesStart = () => ({
+    type: 'FETCH_EXPENSES_START'
+});
+
+export const fetchExpensesDone = (expenses, count) => ({
+    type: 'FETCH_EXPENSES_DONE',
+    expenses,
+    count
+});
+
+export const fetchExpensesError = (error) => ({
+    type: 'FETCH_EXPENSES_ERROR',
+    error
+});
+
+
+// Fetches the first number of requested items starting at but not including @startExpense
+// and ending at but not including @endExpense. If both @startExpense and @end are given, @numItems
+// is ignored.
+export const fetchExpenses = (numItems, startExpense = null, endExpense = null) => {
+    return (dispatch, getState) => {
+        
+        dispatch(fetchExpensesStart());
+        
+        const uid = getState().auth.uid;
+        let databaseRef =  database.ref(`users/${uid}/expenses`);
+        //const { text, sortBy, startDate, endDate } = getState().filters;
+        let sortBy = 'date';
+        switch (sortBy) {
+            case 'date':
+                databaseRef = databaseRef.orderByChild('createdAt');
+                break;
+            case 'amount':
+                databaseRef = databaseRef.orderByChild('amount');
+                break;
+            default:
+                databaseRef = databaseRef.orderByKey();
+                break;
+        } 
+
+        const startKey = startExpense ? startExpense.id : null;
+        const endKey = endExpense ? endExpense.id : null;
+
+        if (startKey) {
+            if (sortBy === 'date') {
+                databaseRef = databaseRef.startAt(startExpense.createdAt, startKey);  
+            }else {
+                databaseRef = databaseRef.startAt(startKey);            
+            }
+        }
+
+        if (endKey) {
+            if (sortBy === 'date') {
+                databaseRef = databaseRef.endAt(endExpense.createdAt, endKey);
+            }else {
+                databaseRef = databaseRef.endAt(endKey);
+            }
+        }
+
+        if (!startKey && !endKey) {
+            databaseRef = databaseRef.limitToFirst(numItems);
+        }else if (startKey && !endKey) {
+            databaseRef = databaseRef.limitToFirst(numItems + 1);
+        }else if (!startKey && endKey) {
+            databaseRef = databaseRef.limitToLast(numItems + 1);
+        }           
+        
+        const expensesPromise = databaseRef.once('value');
+        const countPromise = database.ref(`users/${uid}/expensesCount`).once('value');
+        
+        return Promise.all([expensesPromise, countPromise])
+        .then(snapshots => {
+            const expensesSnapshot = snapshots[0];
+            const countSnapshot = snapshots[1];
+
+            const expenses = [];
+            expensesSnapshot.forEach(childSnapshot => {
+                expenses.push({
+                    id: childSnapshot.key,
+                    ...childSnapshot.val()
+                });
+            });
+            
+            // remove the item with startKey
+            if (startKey) {
+                expenses.splice(0, 1);
+            }
+
+            // remove the item with endKey
+            if (endKey) {
+                expenses.splice(expenses.length - 1);
+            }
+
+            const count = countSnapshot.val() || 0;           
+            dispatch(fetchExpensesDone(expenses, count));
+        })
+        .catch(error => { 
+            console.error(error);
+            dispatch(fetchExpensesError(error));
+        });
+    }
+}

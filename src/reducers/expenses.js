@@ -1,6 +1,11 @@
-const expenseReducerDefault = [];
+const initialState = {
+    loading: false,
+    items: [],
+    count: 0,
+    error: null
+};
 
-const expenseReducer = (state = expenseReducerDefault, action) => {
+const expenseReducer = (state = initialState, action) => {
     switch (action.type) {
         case 'ADD_EXPENSE': 
             return [...state, action.expense];
@@ -20,6 +25,25 @@ const expenseReducer = (state = expenseReducerDefault, action) => {
             });
         case 'SET_EXPENSES':
             return action.expenses;
+        case 'FETCH_EXPENSES_START':
+            return {
+                loading: true,
+                items: [],
+                error: null
+            };
+        case 'FETCH_EXPENSES_DONE':
+            return {
+                loading: false,
+                items: action.expenses,
+                count: action.count,
+                error: null
+            };
+        case 'FETCH_EXPENSES_ERROR':
+            return {
+                loading: false,
+                items: [],
+                error: action.error
+            };
         default:
             return state;
     }

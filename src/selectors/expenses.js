@@ -1,7 +1,7 @@
 import moment from 'moment';
 
-export default (expenses, {text, sortBy, startDate, endDate}) => {    
-    return expenses.filter((expense) => {
+export default ({items}, {text, sortBy, startDate, endDate}) => {    
+    return items.filter((expense) => {
         const createdAtMoment = moment(expense.createdAt);
         const startDateMatch = startDate ? createdAtMoment.isSameOrAfter(startDate, 'day') : true;
         const endDateMatch = endDate? createdAtMoment.isSameOrBefore(endDate, 'day') : true;
