@@ -1,7 +1,7 @@
 import React from 'react';
 import {connect} from 'react-redux';
 import ExpenseItem from './ExpenseItem';
-import {fetchExpenses} from '../actions/expenses';
+import {fetchNextExpenses, fetchPreviousExpenses} from '../actions/expenses';
 import filteredExpenses from '../selectors/expenses';
 import Pagination from './Pagination';
 
@@ -19,7 +19,7 @@ export class ExpenseList extends React.Component {
     }
     
     componentDidMount() {
-        this.props.fetch(this.state.pageSize);
+        this.props.fetchNext(this.state.pageSize, null, 'date', 'desc');
     }
 
     // getPageItems(pageNumber, pageSize) {
@@ -41,12 +41,12 @@ export class ExpenseList extends React.Component {
     }
 
     onNextPageClick = () => {
-        const { expenses, count, fetch } = this.props; 
+        const { expenses, count, fetchNext } = this.props; 
         const totalPages = this.getTotalPages(count, this.state.pageSize);
         
         if (this.state.pageNumber + 1 <= totalPages) {
-            const nextExpense = expenses && expenses.length > 0 ? expenses[expenses.length - 1] : null;         
-            fetch(this.state.pageSize, nextExpense)
+            const nextExpense = expenses && expenses.length > 0 ? expenses[expenses.length - 1] : null;   
+            fetchNext(this.state.pageSize, nextExpense, 'date', 'desc')              
                 .then(() => {
                     this.setState((state) => {        
                         return {                    
@@ -61,9 +61,9 @@ export class ExpenseList extends React.Component {
 
     onPrevPageClick = () => {
         if (this.state.pageNumber > 1) {
-            const { expenses, fetch } = this.props;            
+            const { expenses, fetchPrevious } = this.props;            
             const endExpense = expenses && expenses.length > 0 ? expenses[0] : null;             
-            fetch(this.state.pageSize, null, endExpense)
+            fetchPrevious(this.state.pageSize, endExpense, 'date', 'desc') 
                 .then(() => {
                     this.setState(state => {
                         return {
@@ -127,8 +127,9 @@ const mapStateToProps = (state) => ({
     error: state.expenses.error
 });
 
-const mapDispatchToProps = (dispatch) => ({
-    fetch: (pageSize, startKey, endKey, startExpense ) => dispatch(fetchExpenses(pageSize, startKey, endKey, startExpense)) 
+const mapDispatchToProps = (dispatch) => ({     
+    fetchNext:  (numItems, startExpense, sortBy, sortDirection) => dispatch(fetchNextExpenses(numItems, startExpense, sortBy, sortDirection)),
+    fetchPrevious: (numItems, endExpense, sortBy, sortDirection) => dispatch(fetchPreviousExpenses(numItems, endExpense, sortBy, sortDirection))
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(ExpenseList);

@@ -95,89 +95,115 @@ export const fetchExpensesError = (error) => ({
 });
 
 
-// Fetches the first number of requested items starting at but not including @startExpense
-// and ending at but not including @endExpense. If both @startExpense and @end are given, @numItems
-// is ignored.
-export const fetchExpenses = (numItems, startExpense = null, endExpense = null) => {
+export const fetchNextExpenses = (numItems, startExpense = null, sortBy = '', sortDirection = 'asc') => {
     return (dispatch, getState) => {
-        
-        dispatch(fetchExpensesStart());
-        
         const uid = getState().auth.uid;
-        let databaseRef =  database.ref(`users/${uid}/expenses`);
-        //const { text, sortBy, startDate, endDate } = getState().filters;
-        let sortBy = 'date';
-        switch (sortBy) {
-            case 'date':
-                databaseRef = databaseRef.orderByChild('createdAt');
-                break;
-            case 'amount':
-                databaseRef = databaseRef.orderByChild('amount');
-                break;
-            default:
-                databaseRef = databaseRef.orderByKey();
-                break;
-        } 
+        let databaseRef = getExpensesDatabaseRef(uid, sortBy);
+        const key = startExpense ? startExpense.id : null;
 
-        const startKey = startExpense ? startExpense.id : null;
-        const endKey = endExpense ? endExpense.id : null;
-
-        if (startKey) {
-            if (sortBy === 'date') {
-                databaseRef = databaseRef.startAt(startExpense.createdAt, startKey);  
-            }else {
-                databaseRef = databaseRef.startAt(startKey);            
+        if (key) {
+            if (sortBy === 'date' && sortDirection === 'asc') {
+                databaseRef = databaseRef.startAt(startExpense.createdAt, key);  
+            }else if (sortBy === 'date' && sortDirection === 'desc') {
+                databaseRef = databaseRef.endAt(startExpense.createdAt, key);    
+            }else if (sortDirection === 'asc') {
+                databaseRef = databaseRef.startAt(key);     
+            }else if (sortDirection === 'desc') {
+                databaseRef = databaseRef.endAt(key); 
             }
         }
 
-        if (endKey) {
-            if (sortBy === 'date') {
-                databaseRef = databaseRef.endAt(endExpense.createdAt, endKey);
-            }else {
-                databaseRef = databaseRef.endAt(endKey);
-            }
+        if (sortDirection === 'asc') {
+            databaseRef = databaseRef.limitToFirst(key ? numItems + 1 : numItems);
+        }else {
+            databaseRef = databaseRef.limitToLast(key ? numItems + 1 : numItems);
         }
 
-        if (!startKey && !endKey) {
-            databaseRef = databaseRef.limitToFirst(numItems);
-        }else if (startKey && !endKey) {
-            databaseRef = databaseRef.limitToFirst(numItems + 1);
-        }else if (!startKey && endKey) {
-            databaseRef = databaseRef.limitToLast(numItems + 1);
-        }           
-        
-        const expensesPromise = databaseRef.once('value');
-        const countPromise = database.ref(`users/${uid}/expensesCount`).once('value');
-        
-        return Promise.all([expensesPromise, countPromise])
-        .then(snapshots => {
-            const expensesSnapshot = snapshots[0];
-            const countSnapshot = snapshots[1];
-
-            const expenses = [];
-            expensesSnapshot.forEach(childSnapshot => {
-                expenses.push({
-                    id: childSnapshot.key,
-                    ...childSnapshot.val()
-                });
-            });
-            
-            // remove the item with startKey
-            if (startKey) {
-                expenses.splice(0, 1);
-            }
-
-            // remove the item with endKey
-            if (endKey) {
-                expenses.splice(expenses.length - 1);
-            }
-
-            const count = countSnapshot.val() || 0;           
-            dispatch(fetchExpensesDone(expenses, count));
-        })
-        .catch(error => { 
-            console.error(error);
-            dispatch(fetchExpensesError(error));
-        });
+        return fetch(dispatch, uid, databaseRef, sortDirection, key);
     }
 }
+
+export const fetchPreviousExpenses = (numItems, endExpense, sortBy = '', sortDirection = 'asc') => {
+    return (dispatch, getState) => {
+        const uid = getState().auth.uid;
+        let databaseRef = getExpensesDatabaseRef(uid, sortBy);
+        const key = endExpense.id; 
+
+        if (key) {
+            if (sortBy === 'date' && sortDirection === 'asc') {
+                databaseRef = databaseRef.endAt(endExpense.createdAt, key);  
+            }else if (sortBy === 'date' && sortDirection === 'desc') {
+                databaseRef = databaseRef.startAt(endExpense.createdAt, key);    
+            }else if (sortDirection === 'asc') {
+                databaseRef = databaseRef.endAt(key);     
+            }else if (sortDirection === 'desc') {
+                databaseRef = databaseRef.startAt(key); 
+            }
+        }
+
+        if (sortDirection === 'asc') {
+            databaseRef = databaseRef.limitToLast(numItems + 1);
+        }else {
+            databaseRef = databaseRef.limitToFirst(numItems + 1);
+        }
+
+        return fetch(dispatch, uid, databaseRef, sortDirection, key);
+    }
+}
+
+const getExpensesDatabaseRef = (uid, sortBy) => {
+    
+    let databaseRef = database.ref(`users/${uid}/expenses`);
+
+    switch (sortBy) {
+        case 'date':
+            databaseRef = databaseRef.orderByChild('createdAt');
+            break;
+        case 'amount':
+            databaseRef = databaseRef.orderByChild('amount');
+            break;
+        default:
+            databaseRef = databaseRef.orderByKey();
+            break;
+    }
+    
+    return databaseRef;
+}
+
+const fetch = (dispatch, uid, databaseRef, sortDirection, excludeExpenseID = '') => {
+   
+    dispatch(fetchExpensesStart());
+
+    const expensesPromise = databaseRef.once('value');
+    const countPromise = database.ref(`users/${uid}/expensesCount`).once('value');
+    
+    return Promise.all([expensesPromise, countPromise])
+    .then(snapshots => {
+
+        const expensesSnapshot = snapshots[0];
+        const countSnapshot = snapshots[1];
+
+        let expenses = [];
+        expensesSnapshot.forEach(childSnapshot => {
+            expenses.push({
+                id: childSnapshot.key,
+                ...childSnapshot.val()
+            });
+        });       
+        
+        const count = countSnapshot.val() || 0;           
+        
+        if (sortDirection === 'desc') {
+            expenses.reverse();
+        }
+
+        const items = !!excludeExpenseID ? expenses.filter(e => e.id !== excludeExpenseID) : expenses;        
+        dispatch(fetchExpensesDone(items, count));
+    })
+    .catch(error => { 
+        console.error(error);
+        dispatch(fetchExpensesError(error));
+    });
+}
+
+
